@@ -2,5 +2,5 @@
 - Will Thomas
 - Logan Schmalz
 
-# Third Party Dependencies:
-None yet
+# Dependencies:
+- The only thing our project should require is python on the path
