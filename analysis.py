@@ -94,22 +94,41 @@ def cfg(lines: list[str], writeDir: str) -> None:
 #     return False
 
 
-# Access command-line arguments
-arguments = sys.argv
+def quickGet(l: list[str], val: str) -> int:
+    return l.index(val) if val in l else -1
 
-if len(arguments) > 1:
-    print("Arguments passed:", arguments[1:])
-else:
-    print("No arguments passed.")
 
-with open(filePath, "r") as fd:
-    filetext: list[str] = fd.readlines()
-    # TODO: Manage slash on write dir
+def main():
+    sInd = quickGet(sys.argv, "-s")
+    iInd = quickGet(sys.argv, "-i")
+    oInd = quickGet(sys.argv, "-o")
 
-    writedir = "./"
-    cfg(filetext, writedir)
-    # leak = dataflow(filetext)
-    # if leak:
-    #     print("leak")
-    # else:
-    #     print("no leak")
+    if iInd == -1:
+        # Invalid arguments have been passed
+        print("ERROR INVALID ARGUMENTS 1")
+        exit(1)
+
+    infile = sys.argv[iInd + 1]
+    fd = open(infile, "r")
+    filelines = fd.readlines()
+    fd.close()
+
+    if sInd == -1 and oInd != -1:
+        # Do CFG
+        outfile = sys.argv[oInd + 1]
+        if outfile:
+            cfg(filelines, outfile)
+        else:
+            # No argument for the outfile was specified
+            print("ERROR INVALID ARGUMENTS 2")
+            exit(1)
+    elif sInd != -1 and oInd == -1:
+        # Do dataflow
+        pass
+    else:
+        # Invalid arguments have been passed
+        print("ERROR INVALID ARGUMENTS 3")
+        exit(1)
+
+
+main()
