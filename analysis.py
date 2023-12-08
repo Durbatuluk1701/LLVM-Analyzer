@@ -136,7 +136,8 @@ def fixedPointLeakDetector(fnLines: list[str], origTaints: set[str]) -> bool:
 def main():
     sInd = quickGet(sys.argv, "-s")
     iInd = quickGet(sys.argv, "-i")
-    oInd = quickGet(sys.argv, "-g")
+    gInd = quickGet(sys.argv, "-g")
+    # oInd = quickGet(sys.argv, "-o")
 
     if iInd == -1:
         # Invalid arguments have been passed
@@ -148,9 +149,9 @@ def main():
     filelines = fd.readlines()
     fd.close()
 
-    if sInd == -1 and oInd != -1:
+    if sInd == -1 and gInd != -1:
         # Do CFG
-        outfile = sys.argv[oInd + 1]
+        outfile = sys.argv[gInd + 1]
         if outfile:
             if outfile[-1] != "/":
                 outfile = outfile + "/"
@@ -161,7 +162,7 @@ def main():
             # No argument for the outfile was specified
             print("ERROR INVALID ARGUMENTS 2")
             exit(1)
-    elif sInd != -1 and oInd == -1:
+    elif sInd != -1 and gInd == -1:
         fnList = splitIntoFns(filelines)
         for fn in fnList:
             origSet: set[str] = set()
