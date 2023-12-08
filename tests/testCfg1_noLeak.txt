@@ -1,0 +1,44 @@
+define i32 @main() {
+    ; Entry block
+    br label %entry
+
+entry:
+    ; Initialize variable x to 0
+    %x = alloca i32
+    store i32 0, i32* %x
+    
+    ; Condition check
+    %cmp = icmp sgt i32 5, 2
+    br i1 %cmp, label %if_block, label %else_block
+
+if_block:
+    ; If condition is true (5 > 2)
+    ; Perform some operations and jump to another block
+    store i32 10, i32* %x
+    br label %loop_start
+
+else_block:
+    ; If condition is false
+    ; Another set of operations and a different branch
+    store i32 5, i32* %x
+    br label %loop_start
+
+loop_start:
+    ; Loop block
+    ; Check loop condition (x < 20)
+    %val = load i32, i32* %x
+    %cmp2 = icmp slt i32 %val, 20
+    br i1 %cmp2, label %loop_body, label %exit
+
+loop_body:
+    ; Loop body: Increment x by 3
+    %inc = add i32 %val, 3
+    store i32 %inc, i32* %x
+    
+    ; Branch back to loop start
+    br label %loop_start
+
+exit:
+    ; Exit block
+    ret i32 0
+}

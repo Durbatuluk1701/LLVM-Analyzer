@@ -95,35 +95,42 @@ being jumped back to.
 
 
 def fixedPointLeakDetector(fnLines: list[str], origTaints: set[str]) -> bool:
-    taintedVals: set[str] = set(origTaints)
+    taintedVals: list[str] = list(origTaints)
     for line in fnLines:
-        sourceMatch = re.match(r"\s*%(\w+) = call (\w+) @SOURCE \(.*\)", line)
+        sourceMatch = re.match(r"\s*%(\w+) = call [\w\*]+ @SOURCE \(.*\)", line)
         if sourceMatch:
-            taintedVals.add(sourceMatch.group(1))
+            taintedVals.append(sourceMatch.group(1))
             continue
         taintMatch = re.match(r"\s*%(\w+)\s*=\s*(.+)", line)
         if taintMatch:
             # This is really just checking for assignments
             for val in taintedVals:
-                if (val + ",") in taintMatch.group(2) or (
-                    val + ")"
-                ) in taintMatch.group(2):
+                remGroup = taintMatch.group(2)
+                if (
+                    (val + ",") in remGroup
+                    or (val + ")") in remGroup
+                    or (remGroup.endswith(val))
+                ):
                     # If a tainted val was used in the assignment
-                    taintedVals.add(taintMatch.group(1))
-        sinkMatch = re.match(r"\s*call (\w+) @\w+ \((.+)", line)
+                    taintedVals.append(taintMatch.group(1))
+        sinkMatch = re.match(r"\s*call [\w\*]+ @\w+ \((.*)", line)
         if sinkMatch:
             # This checks for all calls
             for val in taintedVals:
-                if (val + ",") in sinkMatch.group(2) or (val + ")") in sinkMatch.group(
-                    2
+                remGroup = sinkMatch.group(1)
+                if (
+                    (val + ",") in remGroup
+                    or (val + ")") in remGroup
+                    or (remGroup.endswith(val))
                 ):
                     # Tainted val has been sunk!
                     return True
-    if len(origTaints) == len(taintedVals):
+    newTaints = set(taintedVals)
+    if len(origTaints) == len(newTaints):
         # No new taints have been added, fixpoint reached
         return False
     # Otherwise keep going until fixed-point is reached
-    return fixedPointLeakDetector(fnLines, taintedVals)
+    return fixedPointLeakDetector(fnLines, newTaints)
 
 
 def main():
@@ -157,7 +164,8 @@ def main():
     elif sInd != -1 and oInd == -1:
         fnList = splitIntoFns(filelines)
         for fn in fnList:
-            if fixedPointLeakDetector(filelines, set()):
+            origSet: set[str] = set()
+            if fixedPointLeakDetector(filelines, origSet):
                 print("LEAK")
                 exit(0)
         print("NO LEAK")

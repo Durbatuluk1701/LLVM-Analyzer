@@ -17,5 +17,7 @@ CFL -Prog "python ..\analysis.py -i .\test3_leak.txt -s" -Exp "LEAK"
 CFL -Prog "python ..\analysis.py -i .\test4_noLeak.txt -s" -Exp "NO LEAK"
 CFL -Prog "python ..\analysis.py -i .\testAll_leak.txt -s" -Exp "LEAK"
 CFL -Prog "python ..\analysis.py -i .\testBig_cfg_noLeak.txt -s" -Exp "NO LEAK"
+CFL -Prog "python ..\analysis.py -i .\testCfg1_noLeak.txt -s" -Exp "NO LEAK"
+CFL -Prog "python ..\analysis.py -i .\testCfg1_leak.txt -s" -Exp "LEAK"
 
 Write-Host "DONE"
