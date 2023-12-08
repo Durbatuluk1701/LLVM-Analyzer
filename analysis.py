@@ -1,8 +1,6 @@
 import re
 import sys
 
-filePath = "testAll.txt"
-
 
 class BBL:
     def __init__(self, label: str) -> None:
@@ -18,7 +16,7 @@ class BBL:
 
 
 def processFn(lines: list[str]) -> list[BBL]:
-    bblList = [BBL("HJAKLFGHKJLDAJSFHJKASDHGJKLHASDJKHGJKDSAHJKLDGH")]
+    bblList = [BBL("DONOTMAKEALABELNAMEDTHIS")]
     activeBBL = True
     for line in lines:
         # Find functions
@@ -39,7 +37,7 @@ def processFn(lines: list[str]) -> list[BBL]:
                 bblList[-1].targets.append(bblDirectLeave.group(1))
                 continue
             bblSplitLeave = re.match(
-                r"\s*br (\w+) %(\w+), label %(\w+), label %(\w+)", line
+                r"\s*br [\w\*]+ %(\w+), label %(\w+), label %(\w+)", line
             )
             if bblSplitLeave:
                 activeBBL = False
@@ -62,12 +60,12 @@ def cfg(lines: list[str], writeDir: str) -> None:
     activeFnMode = False
     for line in lines:
         # Find functions
-        fnVal = re.match(r"\s*define (\w+) @(\w+)\(.+\) {", line)
+        fnVal = re.match(r"\s*define [\w\*]+ @(\w+)\(.+\) {", line)
         if fnVal:
             if activeFnMode:
                 raise Exception("NESTED FNS!")
             activeFnMode = True
-            fnList.append([fnVal.group(2)])
+            fnList.append([fnVal.group(1)])
             continue
         if activeFnMode:
             closeMatch = re.match(r"\s*}\s*", line)
@@ -78,20 +76,6 @@ def cfg(lines: list[str], writeDir: str) -> None:
     for fn in fnList:
         # Process each fn
         createDotOut(processFn(fn[1:]), writeDir + f"/{fn[0]}.dot")
-
-
-# def dataflow(lines: list[str]) -> bool:
-#     # re.search('%(\w+) = call i32 @SOURCE \(\)\n(^.+$\n)*?(.+call i32 @\w+ \(\w+ %\1\))', fileText, "")
-#     taintedVals = []
-#     # NOTE: Do we need to worry about SINKs before SOURCES?
-#     for line in lines:
-#         sourceVal = re.search(r"%(\w+) = call \w+ @SOURCE .+", line)
-#         if sourceVal:
-#             taintedVals.push(sourceVal.group(1))
-#             continue
-#         # Now we search for sinks
-#         taintVal = re.search(r"%(\w+) = ")
-#     return False
 
 
 def quickGet(l: list[str], val: str) -> int:
