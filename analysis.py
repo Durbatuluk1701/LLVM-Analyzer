@@ -2,6 +2,10 @@ import re
 import sys
 
 
+def cleanseLabel(s: str) -> str:
+    return s.replace(".", "__").replace("-", "___")
+
+
 class BBL:
     def __init__(self, label: str) -> None:
         self.label = label
@@ -9,9 +13,9 @@ class BBL:
 
     def dotOut(self) -> str:
         retStr = ""
-        retStr += f'{self.label} [shape=record, label=""]\n'
+        retStr += f'{cleanseLabel(self.label)} [shape=record, label=""]\n'
         for ind in range(len(self.targets)):
-            retStr += f"{self.label} -> {self.targets[ind]} [label={ind+1}]\n"
+            retStr += f"{cleanseLabel(self.label)} -> {cleanseLabel(self.targets[ind])} [label={ind+1}]\n"
         return retStr
 
 
@@ -20,7 +24,7 @@ def processFn(lines: list[str]) -> list[BBL]:
     activeBBL = True
     for line in lines:
         # Find functions
-        lblMatch = re.match(r"\s*(\w+)\s*:\s*", line)
+        lblMatch = re.match(r"\s*([\w\.]+)\s*:\s*", line)
         if lblMatch:
             if len(bblList) == 1 and activeBBL:
                 bblList[0].label = lblMatch.group(1)
@@ -31,13 +35,13 @@ def processFn(lines: list[str]) -> list[BBL]:
             bblList.append(BBL(lblMatch.group(1)))
             continue
         if activeBBL:
-            bblDirectLeave = re.match(r"\s*br label %(\w+)", line)
+            bblDirectLeave = re.match(r"\s*br label %([\w\.]+)", line)
             if bblDirectLeave:
                 activeBBL = False
                 bblList[-1].targets.append(bblDirectLeave.group(1))
                 continue
             bblSplitLeave = re.match(
-                r"\s*br [\w\*]+ %(\w+), label %(\w+), label %(\w+)", line
+                r"\s*br [\w\*]+ %(\w+), label %([\w\.]+), label %([\w\.]+)", line
             )
             if bblSplitLeave:
                 activeBBL = False
@@ -64,7 +68,7 @@ def splitIntoFns(lines: list[str]) -> list[list[str]]:
     activeFnMode = False
     for line in lines:
         # Find functions
-        fnVal = re.match(r"\s*define [\w\*]+ @(\w+)\(.+\) {", line)
+        fnVal = re.match(r"\s*define [\w\*]+ @(\w+)\(.*\) {", line)
         if fnVal:
             if activeFnMode:
                 raise Exception("NESTED FNS!")
