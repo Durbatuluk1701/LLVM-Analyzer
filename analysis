@@ -1,0 +1,14 @@
+while getops i:os flag
+do
+  case "${flag}" in
+    i) infile=${OPTARG};;
+    o) outdir=${OPTARG};;
+    s) dataflow=true;;
+  esac
+done
+
+if [ "$dataflow" = true ] ; then 
+  python ./analysis.py -i $infile -s
+  exit 0
+fi
+python ./analysis.py -i $infile -o $outdir
