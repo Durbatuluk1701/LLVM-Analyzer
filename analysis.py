@@ -75,7 +75,7 @@ def cfg(lines: list[str], writeDir: str) -> None:
             fnList[-1].append(line)
     for fn in fnList:
         # Process each fn
-        createDotOut(processFn(fn[1:]), writeDir + f"/{fn[0]}.dot")
+        createDotOut(processFn(fn[1:]), writeDir + f"{fn[0]}.dot")
 
 
 def quickGet(l: list[str], val: str) -> int:
@@ -86,6 +86,7 @@ def dataflow(lines: list[str]):
     fileStr = ""
     for line in lines:
         fileStr += line
+    # NOTE: This will catch the direct flows
     searcher = re.search(
         r"%(\w+) = call i32 @SOURCE \(\)\n(^.+$\n)*?(.+call i32 @\w+ \(\w+ %\1\))",
         fileStr,
@@ -115,6 +116,8 @@ def main():
         # Do CFG
         outfile = sys.argv[oInd + 1]
         if outfile:
+            if outfile[-1] != "/":
+                outfile = outfile + "/"
             cfg(filelines, outfile)
         else:
             # No argument for the outfile was specified
