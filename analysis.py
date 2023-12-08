@@ -41,8 +41,8 @@ def processFn(lines: list[str]) -> list[BBL]:
             )
             if bblSplitLeave:
                 activeBBL = False
+                bblList[-1].targets.append(bblSplitLeave.group(2))
                 bblList[-1].targets.append(bblSplitLeave.group(3))
-                bblList[-1].targets.append(bblSplitLeave.group(4))
                 continue
     return bblList
 
