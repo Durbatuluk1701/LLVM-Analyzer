@@ -55,8 +55,12 @@ def createDotOut(bbls: list[BBL], writePath: str) -> None:
         fd.write(retStr + "}\n")
 
 
-def cfg(lines: list[str], writeDir: str) -> None:
-    fnList = []
+def quickGet(l: list[str], val: str) -> int:
+    return l.index(val) if val in l else -1
+
+
+def splitIntoFns(lines: list[str]) -> list[list[str]]:
+    fnList: list[list[str]] = []
     activeFnMode = False
     for line in lines:
         # Find functions
@@ -73,34 +77,51 @@ def cfg(lines: list[str], writeDir: str) -> None:
                 activeFnMode = False
                 continue
             fnList[-1].append(line)
-    for fn in fnList:
-        # Process each fn
-        createDotOut(processFn(fn[1:]), writeDir + f"{fn[0]}.dot")
+    return fnList
 
 
-def quickGet(l: list[str], val: str) -> int:
-    return l.index(val) if val in l else -1
+""" NOTE: This function will be over-approximate
+and does not check that we actually jump backwards 
+in order to reach the leaked value.
+Although in likelihood a tainted value by the same
+name would only appear above in a phi function,
+which would be needed only in the case that it is 
+being jumped back to.
+"""
 
 
-def dataflow(lines: list[str]):
-    fileStr = ""
-    for line in lines:
-        fileStr += line
-    # NOTE: This will catch the direct flows
-    searcher = re.search(
-        r"%(\w+) = call i32 @SOURCE \(\)\n(^.+$\n)*?(.+call i32 @\w+ \(\w+ %\1\))",
-        fileStr,
-    )
-    if searcher:
-        print("LEAK")
-    else:
-        print("NO LEAK")
+def fixedPointLeakDetector(fnLines: list[str], origTaints: set[str]) -> bool:
+    taintedVals: set[str] = set(origTaints)
+    for line in fnLines:
+        sourceMatch = re.match(r"\s*%(\w+) = call (\w+) @SOURCE \(.*\)", line)
+        if sourceMatch:
+            taintedVals.add(sourceMatch.group(1))
+            continue
+        taintMatch = re.match(r"\s*%(\w+)\s*=\s*(.+)", line)
+        if taintMatch:
+            # This is really just checking for assignments
+            for val in taintedVals:
+                if val in taintMatch.group(2):
+                    # If a tainted val was used in the assignment
+                    taintedVals.add(taintMatch.group(1))
+        sinkMatch = re.match(r"\s*call (\w+) @\w+ \((.+)\)", line)
+        if sinkMatch:
+            # This checks for all calls
+            for val in taintedVals:
+                if val in sinkMatch.group(2):
+                    # Tainted val has been sunk!
+                    return True
+    if len(origTaints) == len(taintedVals):
+        # No new taints have been added, fixpoint reached
+        return False
+    # Otherwise keep going until fixed-point is reached
+    return fixedPointLeakDetector(fnLines, taintedVals)
 
 
 def main():
     sInd = quickGet(sys.argv, "-s")
     iInd = quickGet(sys.argv, "-i")
-    oInd = quickGet(sys.argv, "-o")
+    oInd = quickGet(sys.argv, "-g")
 
     if iInd == -1:
         # Invalid arguments have been passed
@@ -118,14 +139,21 @@ def main():
         if outfile:
             if outfile[-1] != "/":
                 outfile = outfile + "/"
-            cfg(filelines, outfile)
+            fnList = splitIntoFns(filelines)
+            for fn in fnList:
+                createDotOut(processFn(fn[1:]), outfile + f"{fn[0]}.dot")
         else:
             # No argument for the outfile was specified
             print("ERROR INVALID ARGUMENTS 2")
             exit(1)
     elif sInd != -1 and oInd == -1:
-        dataflow(filelines)
-        pass
+        fnList = splitIntoFns(filelines)
+        for fn in fnList:
+            if fixedPointLeakDetector(filelines, set()):
+                print("LEAK")
+                exit(0)
+        print("NO LEAK")
+        exit(0)
     else:
         # Invalid arguments have been passed
         print("ERROR INVALID ARGUMENTS 3")
