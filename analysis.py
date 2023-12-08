@@ -101,14 +101,18 @@ def fixedPointLeakDetector(fnLines: list[str], origTaints: set[str]) -> bool:
         if taintMatch:
             # This is really just checking for assignments
             for val in taintedVals:
-                if val in taintMatch.group(2):
+                if (val + ",") in taintMatch.group(2) or (
+                    val + ")"
+                ) in taintMatch.group(2):
                     # If a tainted val was used in the assignment
                     taintedVals.add(taintMatch.group(1))
-        sinkMatch = re.match(r"\s*call (\w+) @\w+ \((.+)\)", line)
+        sinkMatch = re.match(r"\s*call (\w+) @\w+ \((.+)", line)
         if sinkMatch:
             # This checks for all calls
             for val in taintedVals:
-                if val in sinkMatch.group(2):
+                if (val + ",") in sinkMatch.group(2) or (val + ")") in sinkMatch.group(
+                    2
+                ):
                     # Tainted val has been sunk!
                     return True
     if len(origTaints) == len(taintedVals):
