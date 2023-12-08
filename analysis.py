@@ -82,6 +82,20 @@ def quickGet(l: list[str], val: str) -> int:
     return l.index(val) if val in l else -1
 
 
+def dataflow(lines: list[str]):
+    fileStr = ""
+    for line in lines:
+        fileStr += line
+    searcher = re.search(
+        r"%(\w+) = call i32 @SOURCE \(\)\n(^.+$\n)*?(.+call i32 @\w+ \(\w+ %\1\))",
+        fileStr,
+    )
+    if searcher:
+        print("LEAK")
+    else:
+        print("NO LEAK")
+
+
 def main():
     sInd = quickGet(sys.argv, "-s")
     iInd = quickGet(sys.argv, "-i")
@@ -107,7 +121,7 @@ def main():
             print("ERROR INVALID ARGUMENTS 2")
             exit(1)
     elif sInd != -1 and oInd == -1:
-        # Do dataflow
+        dataflow(filelines)
         pass
     else:
         # Invalid arguments have been passed
